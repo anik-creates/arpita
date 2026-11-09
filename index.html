@@ -15,80 +15,88 @@
 </head>
 <body>
 
-  <!-- ═══════════ TAP-TO-ENTER OVERLAY ═══════════ -->
-  <div id="entry-overlay" aria-label="Tap to enter">
+  <!-- ═══════════ VOLUME GATE OVERLAY ═══════════ -->
+  <div id="entry-overlay">
     <div class="entry-content">
       <div class="entry-icon">🎂</div>
-      <p class="entry-text">Tap anywhere to begin</p>
-      <span class="entry-sparkle">✨</span>
+      <h2 class="entry-title">Arpita's Birthday</h2>
+      <p class="entry-subtitle">Before we begin, turn your volume all the way up</p>
+
+      <div class="volume-check">
+        <div class="volume-bar-container">
+          <div class="volume-bar" id="volume-bar">
+            <div class="volume-fill" id="volume-fill"></div>
+          </div>
+          <div class="volume-labels">
+            <span>🔇</span>
+            <span>🔊</span>
+          </div>
+        </div>
+        <p class="volume-status" id="volume-status">Drag to set your volume to maximum</p>
+        <input type="range" id="volume-slider" min="0" max="100" value="50" class="volume-slider" />
+      </div>
+
+      <button class="entry-btn" id="entry-btn" disabled>
+        <span class="btn-lock">🔒</span>
+        <span class="btn-text">Turn volume to max to enter</span>
+      </button>
+
+      <p class="entry-hint">✨ An experience awaits ✨</p>
     </div>
   </div>
 
   <!-- ═══════════ BACKGROUND MUSIC ═══════════ -->
   <audio id="bg-music" loop preload="auto">
-    <source src="birthday.mp3" type="audio/mpeg" />
     <source src="birthday.wav" type="audio/wav" />
+    <source src="birthday.mp3" type="audio/mpeg" />
   </audio>
 
-  <!-- ═══════════ FLOATING PARTICLES (canvas) ═══════════ -->
+  <!-- ═══════════ FLOATING PARTICLES ═══════════ -->
   <canvas id="particles"></canvas>
 
   <!-- ═══════════ MAIN CONTENT ═══════════ -->
-  <main id="main-content">
+  <main id="main-content" class="hidden">
 
-    <!-- HERO SECTION -->
-    <section class="hero" aria-label="Birthday hero">
-      <div class="hero-photo-wrapper">
-        <img
-          src="main.jpg"
-          alt="Arpita"
-          class="hero-photo"
-          onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80';"
-        />
-        <div class="hero-vignette"></div>
-      </div>
-
-      <div class="hero-text">
-        <p class="hero-prelude">A little something for</p>
-        <h1 class="hero-name">Arpita</h1>
+    <!-- HERO SECTION — portfolio style: text left, photo right -->
+    <section class="hero">
+      <div class="hero-left">
+        <p class="hero-prelude" id="hero-prelude"></p>
+        <h1 class="hero-name" id="hero-name"></h1>
         <div class="hero-divider"><span></span><span class="diamond">◆</span><span></span></div>
-        <p class="hero-wish">
-          Happy Birthday, Arpita! 🎉<br /><br />
-          Today the world became a better place — because you're in it.
-          Your warmth, your laughter, and that spark in your eyes light up
-          every room you walk into.<br /><br />
-          May this new year of your life bring you adventures that thrill you,
-          peace that grounds you, and moments so beautiful they take your
-          breath away.<br /><br />
-          Here's to you — today and every day. 🥂
-        </p>
-        <p class="hero-sign">— With all my love ❤️</p>
+        <h2 class="hero-wish-title" id="hero-wish-title"></h2>
+        <p class="hero-wish" id="hero-wish"></p>
+        <p class="hero-sign" id="hero-sign"></p>
+      </div>
+      <div class="hero-right">
+        <div class="hero-ring">
+          <div class="ring-glow"></div>
+          <div class="hero-photo-wrapper">
+            <img src="main.jpg" alt="Arpita" class="hero-photo" id="hero-photo" />
+          </div>
+          <!-- Floating orbit icons -->
+          <div class="orbit-icon orbit-1">🎂</div>
+          <div class="orbit-icon orbit-2">🎁</div>
+          <div class="orbit-icon orbit-3">🎈</div>
+          <div class="orbit-icon orbit-4">💖</div>
+        </div>
       </div>
     </section>
 
     <!-- MEMORY CAROUSEL SECTION -->
-    <section class="memories" aria-label="Memory carousel">
-      <h2 class="section-title">Our Memories</h2>
-      <p class="section-subtitle">A few snapshots worth a thousand words</p>
+    <section class="memories">
+      <h2 class="section-title" id="section-title"></h2>
+      <p class="section-subtitle" id="section-subtitle"></p>
 
       <div class="carousel-container">
-        <div class="carousel-track" id="carousel-track">
-          <!-- Slides injected by JS -->
-        </div>
-
-        <!-- Navigation arrows -->
+        <div class="carousel-track" id="carousel-track"></div>
         <button class="carousel-btn carousel-prev" aria-label="Previous slide">&#10094;</button>
         <button class="carousel-btn carousel-next" aria-label="Next slide">&#10095;</button>
-
-        <!-- Dots -->
         <div class="carousel-dots" id="carousel-dots"></div>
       </div>
     </section>
 
     <!-- FOOTER -->
-    <footer class="footer">
-      <p>Made with ❤️ just for you</p>
-    </footer>
+    <footer class="footer" id="footer-text"></footer>
   </main>
 
   <script src="script.js"></script>

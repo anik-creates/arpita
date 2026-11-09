@@ -1,24 +1,105 @@
 /* ═══════════════════════════════════════════
-   ENTRY OVERLAY  —  tap to start music
+   LOAD MESSAGES FROM JSON
+   ═══════════════════════════════════════════ */
+let MSG = {};
+
+async function loadMessages() {
+  try {
+    const res = await fetch('messages.json');
+    MSG = await res.json();
+  } catch (e) {
+    // Fallback defaults if JSON fails
+    MSG = {
+      name: "Arpita",
+      heroPrelude: "A little something for",
+      heroWish: "Happy Birthday! 🎉",
+      heroMessage: "Wishing you the most wonderful birthday filled with love, joy, and all the beautiful things you deserve.",
+      heroSign: "— With love ❤️",
+      memoriesTitle: "Our Memories",
+      memoriesSubtitle: "A few snapshots worth a thousand words",
+      footerText: "Made with ❤️ just for you"
+    };
+  }
+
+  // Inject content into DOM
+  document.getElementById('hero-prelude').textContent = MSG.heroPrelude;
+  const nameEl = document.getElementById('hero-name');
+  // Split name: first word white, rest red (like portfolio reference)
+  const parts = MSG.name.split(' ');
+  if (parts.length > 1) {
+    nameEl.innerHTML = `<span class="first">${parts[0]}</span> <span class="accent">${parts.slice(1).join(' ')}</span>`;
+  } else {
+    nameEl.innerHTML = `<span class="accent">${MSG.name}</span>`;
+  }
+  document.getElementById('hero-wish-title').textContent = MSG.heroWish;
+  document.getElementById('hero-wish').textContent = MSG.heroMessage;
+  document.getElementById('hero-sign').textContent = MSG.heroSign;
+  document.getElementById('section-title').textContent = MSG.memoriesTitle;
+  document.getElementById('section-subtitle').textContent = MSG.memoriesSubtitle;
+  document.getElementById('footer-text').innerHTML = `<p>${MSG.footerText}</p>`;
+}
+
+loadMessages();
+
+/* ═══════════════════════════════════════════
+   VOLUME GATE — require max volume
    ═══════════════════════════════════════════ */
 (() => {
-  const overlay = document.getElementById('entry-overlay');
-  const music   = document.getElementById('bg-music');
+  const overlay  = document.getElementById('entry-overlay');
+  const slider   = document.getElementById('volume-slider');
+  const status   = document.getElementById('volume-status');
+  const btn      = document.getElementById('entry-btn');
+  const music    = document.getElementById('bg-music');
+  const main     = document.getElementById('main-content');
 
-  overlay.addEventListener('click', () => {
+  const THRESHOLD = 95; // consider "full volume" at 95+
+
+  slider.addEventListener('input', () => {
+    const val = parseInt(slider.value, 10);
+    // Update slider track color
+    slider.style.background = `linear-gradient(to right, #c0392b ${val}%, rgba(255,255,255,.08) ${val}%)`;
+
+    if (val >= THRESHOLD) {
+      status.textContent = '🔊 Volume is at maximum — you\'re ready!';
+      status.classList.add('ready');
+      btn.disabled = false;
+      btn.classList.add('unlocked');
+      btn.querySelector('.btn-lock').textContent = '🔓';
+      btn.querySelector('.btn-text').textContent = 'Enter ✨';
+    } else {
+      status.textContent = `Volume: ${val}% — slide to 100% to unlock`;
+      status.classList.remove('ready');
+      btn.disabled = true;
+      btn.classList.remove('unlocked');
+      btn.querySelector('.btn-lock').textContent = '🔒';
+      btn.querySelector('.btn-text').textContent = 'Turn volume to max to enter';
+    }
+  });
+
+  // Trigger initial state
+  slider.dispatchEvent(new Event('input'));
+
+  btn.addEventListener('click', () => {
+    if (btn.disabled) return;
+
     overlay.classList.add('fade-out');
+
+    // Start music
     music.volume = 0;
     music.play().catch(() => {});
-    // Fade music in
     let vol = 0;
     const fadeIn = setInterval(() => {
-      vol = Math.min(vol + 0.02, 0.5);
+      vol = Math.min(vol + 0.02, 0.6);
       music.volume = vol;
-      if (vol >= 0.5) clearInterval(fadeIn);
-    }, 60);
-    // Remove overlay from DOM after transition
+      if (vol >= 0.6) clearInterval(fadeIn);
+    }, 50);
+
+    // Show main content
+    main.classList.remove('hidden');
+
+    // Remove overlay after transition
     setTimeout(() => overlay.remove(), 900);
-  }, { once: true });
+  });
 })();
 
 /* ═══════════════════════════════════════════
@@ -28,24 +109,10 @@
   const MEMORY_COUNT = 11;
   const AUTOPLAY_MS  = 4500;
 
-  const fallbacks = [
-    'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=800&q=80',
-    'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800&q=80',
-    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=80',
-    'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=800&q=80',
-    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
-    'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=800&q=80',
-    'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=800&q=80',
-    'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800&q=80',
-    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=80',
-    'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=800&q=80',
-    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
-  ];
-
-  const track = document.getElementById('carousel-track');
+  const track    = document.getElementById('carousel-track');
   const dotsWrap = document.getElementById('carousel-dots');
 
-  // Build slides
+  // Build slides — no fallback placeholders; use real images only
   for (let i = 0; i < MEMORY_COUNT; i++) {
     const slide = document.createElement('div');
     slide.className = 'carousel-slide';
@@ -54,15 +121,10 @@
     img.src = `images/memory${i + 1}.jpg`;
     img.alt = `Memory ${i + 1}`;
     img.loading = i === 0 ? 'eager' : 'lazy';
-    img.onerror = function () {
-      this.onerror = null;
-      this.src = fallbacks[i % fallbacks.length];
-    };
 
     slide.appendChild(img);
     track.appendChild(slide);
 
-    // Dot
     const dot = document.createElement('button');
     dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
     dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
@@ -83,21 +145,17 @@
   function next() { goTo(current + 1); }
   function prev() { goTo(current - 1); }
 
-  // Buttons
   document.querySelector('.carousel-prev').addEventListener('click', () => { prev(); resetAuto(); });
   document.querySelector('.carousel-next').addEventListener('click', () => { next(); resetAuto(); });
 
-  // Dots click
   dots.forEach((dot, i) => {
     dot.addEventListener('click', () => { goTo(i); resetAuto(); });
   });
 
-  // Autoplay
   function startAuto() { autoTimer = setInterval(next, AUTOPLAY_MS); }
   function resetAuto() { clearInterval(autoTimer); startAuto(); }
   startAuto();
 
-  // Pause on hover / touch
   const container = document.querySelector('.carousel-container');
   container.addEventListener('mouseenter', () => clearInterval(autoTimer));
   container.addEventListener('mouseleave', startAuto);
@@ -115,14 +173,14 @@
 })();
 
 /* ═══════════════════════════════════════════
-   FLOATING PARTICLES  (gold dust)
+   FLOATING PARTICLES — Red & Gold dust
    ═══════════════════════════════════════════ */
 (() => {
   const canvas = document.getElementById('particles');
   const ctx    = canvas.getContext('2d');
   let W, H;
   const particles = [];
-  const COUNT = 45;
+  const COUNT = 50;
 
   function resize() {
     W = canvas.width  = window.innerWidth;
@@ -136,12 +194,14 @@
     reset(init) {
       this.x  = Math.random() * W;
       this.y  = init ? Math.random() * H : H + 10;
-      this.r  = Math.random() * 2 + .5;
-      this.vy = -(Math.random() * .35 + .1);
-      this.vx = (Math.random() - .5) * .2;
-      this.a  = Math.random() * .35 + .05;
+      this.r  = Math.random() * 2 + .4;
+      this.vy = -(Math.random() * .3 + .08);
+      this.vx = (Math.random() - .5) * .15;
+      this.a  = Math.random() * .3 + .05;
       this.life = 0;
       this.maxLife = Math.random() * 600 + 300;
+      // Alternate between red and gold particles
+      this.isRed = Math.random() > 0.5;
     }
     update() {
       this.x += this.vx;
@@ -153,7 +213,11 @@
       const fade = 1 - (this.life / this.maxLife);
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(201, 168, 76, ${this.a * fade})`;
+      if (this.isRed) {
+        ctx.fillStyle = `rgba(192, 57, 43, ${this.a * fade})`;
+      } else {
+        ctx.fillStyle = `rgba(201, 168, 76, ${this.a * fade * 0.7})`;
+      }
       ctx.fill();
     }
   }
