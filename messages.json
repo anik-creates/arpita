@@ -1,13 +1,15 @@
 {
   "name": "Arpita",
-  "badgeText": "Special Day • Birthday Edition",
+  "birthDate": "13th November",
+  "age": "19",
+  "badgeText": "13th November • Celebrating Chapter 19",
   "greeting": "Dearest,",
-  "tagline": "The Most Beautiful Birthday Girl",
-  "heroWish": "Happy Birthday, Arpita! 🎂",
-  "heroMessage": "Today the world became brighter and infinitely more beautiful because you're in it. Your grace, that enchanting smile in your red and black sari, and your warmth touch everyone around you.\n\nMay this year unfold with endless happiness, breathtaking adventures, and all the love your heart can hold.\n\nHere's to celebrating you today and forever. 🥂",
-  "heroSign": "— With all my love ❤️",
-  "ctaButton": "Celebrate Arpita ✨",
-  "memoriesTitle": "Our Cherished Memories",
-  "memoriesSubtitle": "Every frame holds a moment I treasure forever",
-  "footerText": "Handcrafted with ❤️ exclusively for Arpita"
+  "tagline": "Turning 19 & More Beautiful Than Ever",
+  "heroWish": "Happy 19th Birthday, Arpita!",
+  "heroMessage": "Today marks the beginning of Chapter 19 — and the world is infinitely more radiant because you are in it. From your graceful smile to that enchanting look in your red and black sari, every moment with you is magic.\n\nMay this 19th year bring you boundless happiness, thrilling milestones, and every dream your heart cherishes.\n\nHere's to celebrating you on your special day and always.",
+  "heroSign": "— With all my love",
+  "ctaButton": "Celebrate Chapter 19",
+  "memoriesTitle": "19 Years & Cherished Frames",
+  "memoriesSubtitle": "A visual timeline of moments that mean everything to me",
+  "footerText": "Handcrafted with care exclusively for Arpita's 19th Birthday • 13th November"
 }

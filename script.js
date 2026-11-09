@@ -1,14 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
-   MODERN BIRTHDAY LOGIC  —  ARPITA'S BIRTHDAY
+   MODERN BIRTHDAY INTERACTIVITY  —  ARPITA'S 19TH BIRTHDAY
    ═══════════════════════════════════════════════════════════ */
 
-// State
 let isPlaying = false;
 let audioCtx = null;
 let synthInterval = null;
 
 /* ═══════════════════════════════════════════
-   1. LOAD MESSAGES FROM JSON
+   1. LOAD MESSAGES FROM JSON (Date, Age, Text)
    ═══════════════════════════════════════════ */
 async function loadMessages() {
   let data = {};
@@ -23,42 +22,42 @@ async function loadMessages() {
 
   const defaults = {
     name: "Arpita",
-    badgeText: "Special Day • Birthday Edition",
+    birthDate: "13th November",
+    age: "19",
+    badgeText: "13th November • Celebrating Chapter 19",
     greeting: "Dearest,",
-    tagline: "The Most Beautiful Birthday Girl",
-    heroWish: "Happy Birthday, Arpita! 🎂",
-    heroMessage: "Today the world became brighter and infinitely more beautiful because you're in it. Your grace, that enchanting smile in your red and black sari, and your warmth touch everyone around you.\n\nMay this year unfold with endless happiness, breathtaking adventures, and all the love your heart can hold.\n\nHere's to celebrating you today and forever. 🥂",
-    heroSign: "— With all my love ❤️",
-    ctaButton: "Celebrate Arpita ✨",
-    memoriesTitle: "Our Cherished Memories",
-    memoriesSubtitle: "Every frame holds a moment I treasure forever",
-    footerText: "Handcrafted with ❤️ exclusively for Arpita"
+    tagline: "Turning 19 & More Beautiful Than Ever",
+    heroWish: "Happy 19th Birthday, Arpita!",
+    heroMessage: "Today marks the beginning of Chapter 19 — and the world is infinitely more radiant because you are in it. From your graceful smile to that enchanting look in your red and black sari, every moment with you is magic.\n\nMay this 19th year bring you boundless happiness, thrilling milestones, and every dream your heart cherishes.\n\nHere's to celebrating you on your special day and always.",
+    heroSign: "— With all my love",
+    ctaButton: "Celebrate Chapter 19",
+    memoriesTitle: "19 Years & Cherished Frames",
+    memoriesSubtitle: "A visual timeline of moments that mean everything to me",
+    footerText: "Handcrafted with care exclusively for Arpita's 19th Birthday • 13th November"
   };
 
   const M = Object.assign({}, defaults, data);
 
   // Bind to DOM
-  const elBadge = document.getElementById('hero-badge');
-  const elGreeting = document.getElementById('hero-greeting');
-  const elName = document.getElementById('hero-name');
-  const elWish = document.getElementById('hero-wish');
-  const elMsg = document.getElementById('hero-message');
-  const elSign = document.getElementById('hero-sign');
-  const elCta = document.getElementById('cta-text');
-  const elMemTitle = document.getElementById('memories-title');
-  const elMemSub = document.getElementById('memories-subtitle');
-  const elFooter = document.getElementById('footer-text');
+  const setTxt = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
 
-  if (elBadge) elBadge.textContent = M.badgeText;
-  if (elGreeting) elGreeting.textContent = M.greeting;
-  if (elName) elName.textContent = M.name;
-  if (elWish) elWish.textContent = M.heroWish;
-  if (elMsg) elMsg.textContent = M.heroMessage;
-  if (elSign) elSign.textContent = M.heroSign;
-  if (elCta) elCta.textContent = M.ctaButton;
-  if (elMemTitle) elMemTitle.textContent = M.memoriesTitle;
-  if (elMemSub) elMemSub.textContent = M.memoriesSubtitle;
-  if (elFooter) elFooter.textContent = M.footerText;
+  setTxt('overlay-badge', `${M.birthDate.toUpperCase()} • CHAPTER ${M.age}`);
+  setTxt('hero-badge', M.badgeText || `${M.birthDate} • Celebrating Chapter ${M.age}`);
+  setTxt('hero-age-badge', `Age ${M.age}`);
+  setTxt('hero-greeting', M.greeting);
+  setTxt('hero-name', M.name);
+  setTxt('meta-date', M.birthDate);
+  setTxt('meta-chapter', `Chapter ${M.age}`);
+  setTxt('hero-wish', M.heroWish);
+  setTxt('hero-message', M.heroMessage);
+  setTxt('hero-sign', M.heroSign);
+  setTxt('cta-text', M.ctaButton);
+  setTxt('memories-title', M.memoriesTitle);
+  setTxt('memories-subtitle', M.memoriesSubtitle);
+  setTxt('footer-text', M.footerText);
 
   // Typewriter effect on tagline
   initTypewriter(M.tagline || defaults.tagline);
@@ -69,7 +68,7 @@ function initTypewriter(text) {
   if (!el) return;
   el.textContent = '';
   let i = 0;
-  const speed = 65;
+  const speed = 55;
 
   function type() {
     if (i < text.length) {
@@ -78,12 +77,11 @@ function initTypewriter(text) {
       setTimeout(type, speed);
     }
   }
-  setTimeout(type, 400);
+  setTimeout(type, 350);
 }
 
 /* ═══════════════════════════════════════════
    2. HIGH-FIDELITY WEB AUDIO SYNTHESIZER
-   (Guarantees zero-lag birthday melody on any device)
    ═══════════════════════════════════════════ */
 function playSynthMelody() {
   try {
@@ -133,13 +131,11 @@ function playSynthMelody() {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
-        // Music-box bell overtone
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(note.f, time);
 
-        // Gentle bell envelope
         gain.gain.setValueAtTime(0.001, time);
-        gain.gain.exponentialRampToValueAtTime(0.3, time + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.28, time + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.0001, time + note.d);
 
         osc.connect(gain);
@@ -150,11 +146,10 @@ function playSynthMelody() {
 
         time += note.p;
       });
-      time += 0.8; // pause between loops
+      time += 0.8;
     }
 
     scheduleSong();
-    // Loop
     const totalDuration = notes.reduce((acc, n) => acc + n.p, 0) + 0.8;
     synthInterval = setInterval(() => {
       if (isPlaying) {
@@ -178,7 +173,7 @@ function stopSynth() {
 }
 
 /* ═══════════════════════════════════════════
-   3. AUDIO CONTROLLER (DUAL MODE)
+   3. AUDIO CONTROLLER
    ═══════════════════════════════════════════ */
 function startMusic() {
   isPlaying = true;
@@ -189,7 +184,7 @@ function startMusic() {
   let audioPlayed = false;
   if (audio) {
     try {
-      audio.volume = 0.5;
+      audio.volume = 0.55;
     } catch(e) {}
 
     const playPromise = audio.play();
@@ -198,14 +193,12 @@ function startMusic() {
         .then(() => {
           audioPlayed = true;
         })
-        .catch(err => {
-          console.log('Audio file blocked or missing, using WebAudio synth chime');
+        .catch(() => {
           playSynthMelody();
         });
     }
   }
 
-  // If audio element takes too long or fails, ensure synth plays
   setTimeout(() => {
     if (!audioPlayed && (!audio || audio.paused || audio.currentTime === 0)) {
       playSynthMelody();
@@ -234,7 +227,7 @@ function toggleMusic() {
 }
 
 /* ═══════════════════════════════════════════
-   4. VOLUME ENTRY GATE (FULL VOLUME REQUIREMENT)
+   4. VOLUME ENTRY GATE (100% MAXIMUM CONFIRMATION)
    ═══════════════════════════════════════════ */
 function initVolumeGate() {
   const overlay = document.getElementById('entry-overlay');
@@ -242,6 +235,8 @@ function initVolumeGate() {
   const readout = document.getElementById('vol-readout');
   const indicator = document.getElementById('volume-indicator');
   const btn = document.getElementById('entry-btn');
+  const btnIcon = document.getElementById('btn-lock-icon');
+  const btnLabel = document.getElementById('btn-label');
   const main = document.getElementById('main-content');
 
   if (!slider || !btn) return;
@@ -249,8 +244,6 @@ function initVolumeGate() {
   function updateState() {
     const val = parseInt(slider.value, 10);
     readout.textContent = val + '%';
-
-    // Slider track gradient
     slider.style.background = `linear-gradient(to right, #e03c31 ${val}%, rgba(255,255,255,0.1) ${val}%)`;
 
     if (val >= 100) {
@@ -258,15 +251,19 @@ function initVolumeGate() {
       indicator.classList.add('ready');
       btn.disabled = false;
       btn.classList.add('unlocked');
-      btn.querySelector('.btn-icon').textContent = '🔓';
-      btn.querySelector('.btn-text').textContent = 'Unlock The Celebration ✨';
+      if (btnIcon) {
+        btnIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`;
+      }
+      if (btnLabel) btnLabel.textContent = 'Unlock The Celebration';
     } else {
       indicator.textContent = `Slide to 100% to unlock (Currently ${val}%)`;
       indicator.classList.remove('ready');
       btn.disabled = true;
       btn.classList.remove('unlocked');
-      btn.querySelector('.btn-icon').textContent = '🔒';
-      btn.querySelector('.btn-text').textContent = 'Set Volume to 100% to Unlock';
+      if (btnIcon) {
+        btnIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+      }
+      if (btnLabel) btnLabel.textContent = 'Set Volume to 100% to Unlock';
     }
   }
 
@@ -276,15 +273,11 @@ function initVolumeGate() {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
 
-    // Start music
     startMusic();
-
-    // Fade out overlay
     overlay.classList.add('fade-out');
     main.classList.remove('content-hidden');
 
-    // Confetti celebration
-    triggerConfetti();
+    triggerSparkles();
 
     setTimeout(() => {
       overlay.remove();
@@ -306,20 +299,18 @@ function initCarousel() {
 
   if (!track || !dotsWrap) return;
 
-  // Render slides dynamically
   for (let i = 1; i <= TOTAL_SLIDES; i++) {
     const slide = document.createElement('div');
     slide.className = 'carousel-slide-item';
 
     const img = document.createElement('img');
     img.src = `images/memory${i}.jpg`;
-    img.alt = `Cherished Memory ${i}`;
+    img.alt = `Arpita Memory ${i}`;
     img.loading = i <= 2 ? 'eager' : 'lazy';
 
     slide.appendChild(img);
     track.appendChild(slide);
 
-    // Dot chip
     const dot = document.createElement('button');
     dot.className = 'carousel-dot-chip' + (i === 1 ? ' active' : '');
     dot.setAttribute('aria-label', `Go to slide ${i}`);
@@ -371,7 +362,6 @@ function initCarousel() {
     frame.addEventListener('mouseenter', stopAuto);
     frame.addEventListener('mouseleave', startAuto);
 
-    // Touch support
     let startX = 0;
     frame.addEventListener('touchstart', e => {
       startX = e.changedTouches[0].clientX;
@@ -392,34 +382,33 @@ function initCarousel() {
 }
 
 /* ═══════════════════════════════════════════
-   6. CELEBRATION CHIPS & CONFETTI
+   6. CELEBRATION EFFECTS (ICONS & SPARKS)
    ═══════════════════════════════════════════ */
-function triggerConfetti() {
+function triggerSparkles() {
   const colors = ['#e03c31', '#e67e22', '#ffffff', '#ffd166', '#ff4757'];
-  const count = 75;
+  const count = 70;
 
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'confetti-burst';
     el.style.position = 'fixed';
     el.style.zIndex = '99999';
     el.style.left = Math.random() * 100 + 'vw';
     el.style.top = '-10px';
-    el.style.width = (Math.random() * 8 + 6) + 'px';
-    el.style.height = (Math.random() * 12 + 6) + 'px';
+    el.style.width = (Math.random() * 8 + 4) + 'px';
+    el.style.height = (Math.random() * 8 + 4) + 'px';
     el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    el.style.borderRadius = '2px';
+    el.style.borderRadius = '50%';
     el.style.pointerEvents = 'none';
-    el.style.transform = `rotate(${Math.random() * 360}deg)`;
+    el.style.boxShadow = '0 0 10px ' + el.style.backgroundColor;
 
-    const duration = Math.random() * 2.5 + 2;
+    const duration = Math.random() * 2.2 + 2;
     el.style.transition = `transform ${duration}s cubic-bezier(0.25, 1, 0.5, 1), top ${duration}s cubic-bezier(0.25, 1, 0.5, 1), opacity ${duration}s`;
 
     document.body.appendChild(el);
 
     setTimeout(() => {
       el.style.top = (window.innerHeight + 20) + 'px';
-      el.style.transform = `rotate(${Math.random() * 720}deg) translateX(${(Math.random() - 0.5) * 150}px)`;
+      el.style.transform = `translateX(${(Math.random() - 0.5) * 160}px) scale(0.3)`;
       el.style.opacity = '0';
     }, 20);
 
@@ -427,28 +416,30 @@ function triggerConfetti() {
   }
 }
 
-function showerHearts() {
-  const count = 30;
+function showerHeartIcons() {
+  const count = 25;
   for (let i = 0; i < count; i++) {
-    const heart = document.createElement('div');
-    heart.textContent = Math.random() > 0.4 ? '💖' : '❤️';
-    heart.style.position = 'fixed';
-    heart.style.zIndex = '9999';
-    heart.style.left = Math.random() * 95 + 'vw';
-    heart.style.bottom = '-20px';
-    heart.style.fontSize = (Math.random() * 20 + 16) + 'px';
-    heart.style.pointerEvents = 'none';
-    heart.style.transition = `all ${Math.random() * 2 + 2.5}s cubic-bezier(0.25, 1, 0.5, 1)`;
+    const heartWrap = document.createElement('div');
+    heartWrap.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#e03c31" stroke="#e03c31" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+    heartWrap.style.position = 'fixed';
+    heartWrap.style.zIndex = '9999';
+    heartWrap.style.left = Math.random() * 92 + 'vw';
+    heartWrap.style.bottom = '-30px';
+    heartWrap.style.pointerEvents = 'none';
+    heartWrap.style.filter = 'drop-shadow(0 0 8px rgba(224, 60, 49, 0.5))';
 
-    document.body.appendChild(heart);
+    const duration = Math.random() * 2 + 2.5;
+    heartWrap.style.transition = `all ${duration}s cubic-bezier(0.25, 1, 0.5, 1)`;
+
+    document.body.appendChild(heartWrap);
 
     setTimeout(() => {
-      heart.style.bottom = (window.innerHeight + 50) + 'px';
-      heart.style.transform = `translateX(${(Math.random() - 0.5) * 80}px) scale(1.3)`;
-      heart.style.opacity = '0';
+      heartWrap.style.bottom = (window.innerHeight + 50) + 'px';
+      heartWrap.style.transform = `translateX(${(Math.random() - 0.5) * 90}px) scale(1.3) rotate(${(Math.random() - 0.5) * 40}deg)`;
+      heartWrap.style.opacity = '0';
     }, 20);
 
-    setTimeout(() => heart.remove(), 4500);
+    setTimeout(() => heartWrap.remove(), duration * 1000);
   }
 }
 
@@ -457,13 +448,21 @@ function initChips() {
   const chipLove = document.getElementById('chip-love');
   const chipMusic = document.getElementById('chip-music');
   const chipMemories = document.getElementById('chip-memories');
+  const chipCalendar = document.getElementById('chip-calendar');
   const ctaBtn = document.getElementById('cta-btn');
   const musicPill = document.getElementById('music-pill');
 
-  if (chipConfetti) chipConfetti.addEventListener('click', triggerConfetti);
-  if (chipLove) chipLove.addEventListener('click', showerHearts);
+  if (chipConfetti) chipConfetti.addEventListener('click', triggerSparkles);
+  if (chipLove) chipLove.addEventListener('click', showerHeartIcons);
   if (chipMusic) chipMusic.addEventListener('click', toggleMusic);
   if (musicPill) musicPill.addEventListener('click', toggleMusic);
+
+  if (chipCalendar) {
+    chipCalendar.addEventListener('click', () => {
+      triggerSparkles();
+      showerHeartIcons();
+    });
+  }
 
   if (chipMemories) {
     chipMemories.addEventListener('click', () => {
@@ -474,8 +473,8 @@ function initChips() {
 
   if (ctaBtn) {
     ctaBtn.addEventListener('click', () => {
-      showerHearts();
-      triggerConfetti();
+      showerHeartIcons();
+      triggerSparkles();
       const section = document.getElementById('memories');
       if (section) {
         setTimeout(() => section.scrollIntoView({ behavior: 'smooth' }), 500);
@@ -485,7 +484,7 @@ function initChips() {
 }
 
 /* ═══════════════════════════════════════════
-   7. AMBIENT PARTICLES (RED & GOLD DUST)
+   7. ANIMATED PARTICLES (RED & GOLD EMBERS)
    ═══════════════════════════════════════════ */
 function initParticles() {
   const canvas = document.getElementById('particles');
