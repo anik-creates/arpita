@@ -68,65 +68,111 @@ function getDefaultLetter() {
 }
 
 /* ═══════════════════════════════════════════
-   2. MICROPHONE DETECTION & BLOW LOGIC
+   2. MICROPHONE PERMISSION MODAL & AUDIO BLOW
    ═══════════════════════════════════════════ */
-async function initMicrophone() {
+function initMicPermission() {
+  const allowBtn = document.getElementById('allow-mic-btn');
+  const entryModal = document.getElementById('mic-entry-modal');
+
+  if (!allowBtn) return;
+
+  allowBtn.addEventListener('click', async () => {
+    // Start microphone from this direct user click gesture
+    await startMicrophoneStream();
+
+    // Dismiss entry modal
+    if (entryModal) {
+      entryModal.classList.remove('active');
+    }
+  });
+}
+
+async function startMicrophoneStream() {
   const meterFill = document.getElementById('meter-fill');
   const meterText = document.getElementById('meter-text');
   const micIcon = document.getElementById('mic-icon');
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    if (meterText) meterText.textContent = "Mic access unavailable • Use blow button";
+    if (meterText) meterText.textContent = "Mic unavailable • Tap candle to blow";
     return;
   }
 
   try {
-    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    // Disable noise suppression & echo cancellation so breath sounds are not filtered out!
+    const constraints = {
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false
+      },
+      video: false
+    };
+
+    audioStream = await navigator.mediaDevices.getUserMedia(constraints);
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     audioContext = new AudioCtx();
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.3;
+    analyser.smoothingTimeConstant = 0.2;
 
     const source = audioContext.createMediaStreamSource(audioStream);
     source.connect(analyser);
 
     if (micIcon) micIcon.classList.add('active');
-    if (meterText) meterText.textContent = "Listening... Blow into microphone!";
+    if (meterText) meterText.textContent = "Mic Live! Blow hard into your device! 💨";
 
     const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+    const timeData = new Uint8Array(bufferLength);
+    const freqData = new Uint8Array(bufferLength);
 
-    function checkBlow() {
+    let blowCounter = 0;
+
+    function checkAudioInput() {
       if (candlesBlown) return;
 
-      analyser.getByteFrequencyData(dataArray);
+      analyser.getByteTimeDomainData(timeData);
+      analyser.getByteFrequencyData(freqData);
 
-      // Calculate average volume
-      let sum = 0;
+      // 1. Time-domain turbulence (breath blowing directly into mic creates high amplitude swings)
+      let sumSquares = 0;
       for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i];
+        let norm = (timeData[i] - 128) / 128.0;
+        sumSquares += norm * norm;
       }
-      const avg = sum / bufferLength;
+      let rms = Math.sqrt(sumSquares / bufferLength);
 
-      // Update meter fill
-      const percent = Math.min(100, Math.round((avg / 90) * 100));
-      if (meterFill) meterFill.style.width = percent + '%';
+      // 2. Frequency-domain energy
+      let freqSum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        freqSum += freqData[i];
+      }
+      let freqAvg = freqSum / bufferLength;
 
-      // High volume threshold for blowing (breath produces broad-band high energy)
-      if (avg > 55 || percent > 65) {
-        extinguishCandles();
-        return;
+      // Visual meter calculation
+      let combinedScore = Math.min(100, Math.round((rms * 120) + (freqAvg * 1.5)));
+      if (meterFill) {
+        meterFill.style.width = Math.max(5, combinedScore) + '%';
       }
 
-      micAnimationId = requestAnimationFrame(checkBlow);
+      // Detection: blowing into phone/laptop mic produces RMS > 0.12 OR freqAvg > 30
+      if (rms > 0.12 || freqAvg > 28 || combinedScore > 45) {
+        blowCounter++;
+        if (blowCounter >= 2) {
+          extinguishCandles();
+          return;
+        }
+      } else {
+        blowCounter = Math.max(0, blowCounter - 1);
+      }
+
+      micAnimationId = requestAnimationFrame(checkAudioInput);
     }
 
-    checkBlow();
+    checkAudioInput();
 
   } catch (err) {
-    console.log("Microphone access denied or error:", err);
-    if (meterText) meterText.textContent = "Microphone access optional • Tap blow button";
+    console.log("Mic access note:", err);
+    if (meterText) meterText.textContent = "Mic optional • Tap any candle to blow!";
   }
 }
 
@@ -134,18 +180,18 @@ function extinguishCandles() {
   if (candlesBlown) return;
   candlesBlown = true;
 
-  // Stop mic
+  // Stop mic capture
   if (micAnimationId) cancelAnimationFrame(micAnimationId);
   if (audioStream) {
     audioStream.getTracks().forEach(track => track.stop());
   }
 
-  // Extinguish each candle with smoke
+  // Extinguish each candle with realistic staggered smoke
   const candles = document.querySelectorAll('.candle');
   candles.forEach((c, idx) => {
     setTimeout(() => {
       c.classList.add('blown');
-    }, idx * 120);
+    }, idx * 100);
   });
 
   // Update instruction & reveal knife
@@ -154,28 +200,48 @@ function extinguishCandles() {
     const title = document.getElementById('instruction-title');
     const desc = document.getElementById('instruction-desc');
     const meterWrap = document.getElementById('mic-meter-wrap');
-    const blowBtn = document.getElementById('blow-fallback-btn');
     const knife = document.getElementById('cake-knife');
 
     if (stepInd) stepInd.textContent = "STEP 2 OF 3";
     if (title) title.textContent = "Candles Blown! Make a Wish! ✨";
-    if (desc) desc.textContent = "Now take the chef's knife and cut your birthday cake!";
+    if (desc) desc.textContent = "Now take the chef's knife and click the cake to slice it!";
     if (meterWrap) meterWrap.style.display = 'none';
-    if (blowBtn) blowBtn.style.display = 'none';
 
     if (knife) knife.classList.add('visible');
 
     triggerSparkles();
-  }, 700);
+  }, 650);
 }
 
 /* ═══════════════════════════════════════════
-   3. CAKE CUTTING INTERACTION
+   3. CAKE CUTTING & CANDLE CLICK BYPASS
    ═══════════════════════════════════════════ */
 function initCakeCutting() {
   const knife = document.getElementById('cake-knife');
   const cakeWrap = document.getElementById('heart-cake-wrap');
+  const candles = document.querySelectorAll('.candle');
+  const cornerBtn = document.getElementById('secret-corner-btn');
 
+  // Secret bypass: clicking any candle blows them out
+  candles.forEach(candle => {
+    candle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!candlesBlown) {
+        extinguishCandles();
+      }
+    });
+  });
+
+  // Secret corner bypass icon
+  if (cornerBtn) {
+    cornerBtn.addEventListener('click', () => {
+      if (!candlesBlown) {
+        extinguishCandles();
+      }
+    });
+  }
+
+  // Cake cutting logic
   function cutCake() {
     if (!candlesBlown || cakeSliced) return;
     cakeSliced = true;
@@ -207,14 +273,10 @@ function initCakeCutting() {
 
   if (knife) knife.addEventListener('click', cutCake);
   if (cakeWrap) cakeWrap.addEventListener('click', () => {
-    if (candlesBlown && !cakeSliced) cutCake();
+    if (candlesBlown && !cakeSliced) {
+      cutCake();
+    }
   });
-
-  // Fallback blow button
-  const blowBtn = document.getElementById('blow-fallback-btn');
-  if (blowBtn) {
-    blowBtn.addEventListener('click', extinguishCandles);
-  }
 }
 
 /* ═══════════════════════════════════════════
@@ -247,7 +309,6 @@ function renderQuiz() {
       btn.textContent = opt;
 
       btn.addEventListener('click', () => {
-        // Select
         optionsWrap.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         userAnswers[q.id] = opt;
@@ -527,7 +588,7 @@ function initParticles() {
    ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   loadCakeData();
-  initMicrophone();
+  initMicPermission();
   initCakeCutting();
   initQuizModal();
   initGlobalClickLove();
