@@ -1,207 +1,519 @@
+/* ═══════════════════════════════════════════════════════════
+   MODERN BIRTHDAY LOGIC  —  ARPITA'S BIRTHDAY
+   ═══════════════════════════════════════════════════════════ */
+
+// State
+let isPlaying = false;
+let audioCtx = null;
+let synthInterval = null;
+
 /* ═══════════════════════════════════════════
-   LOAD MESSAGES FROM JSON
+   1. LOAD MESSAGES FROM JSON
    ═══════════════════════════════════════════ */
-let MSG = {};
-
 async function loadMessages() {
+  let data = {};
   try {
-    const res = await fetch('messages.json');
-    MSG = await res.json();
-  } catch (e) {
-    // Fallback defaults if JSON fails
-    MSG = {
-      name: "Arpita",
-      heroPrelude: "A little something for",
-      heroWish: "Happy Birthday! 🎉",
-      heroMessage: "Wishing you the most wonderful birthday filled with love, joy, and all the beautiful things you deserve.",
-      heroSign: "— With love ❤️",
-      memoriesTitle: "Our Memories",
-      memoriesSubtitle: "A few snapshots worth a thousand words",
-      footerText: "Made with ❤️ just for you"
-    };
+    const res = await fetch('messages.json?v=' + Date.now());
+    if (res.ok) {
+      data = await res.json();
+    }
+  } catch (err) {
+    console.log('Using default messages fallback');
   }
 
-  // Inject content into DOM
-  document.getElementById('hero-prelude').textContent = MSG.heroPrelude;
-  const nameEl = document.getElementById('hero-name');
-  // Split name: first word white, rest red (like portfolio reference)
-  const parts = MSG.name.split(' ');
-  if (parts.length > 1) {
-    nameEl.innerHTML = `<span class="first">${parts[0]}</span> <span class="accent">${parts.slice(1).join(' ')}</span>`;
-  } else {
-    nameEl.innerHTML = `<span class="accent">${MSG.name}</span>`;
-  }
-  document.getElementById('hero-wish-title').textContent = MSG.heroWish;
-  document.getElementById('hero-wish').textContent = MSG.heroMessage;
-  document.getElementById('hero-sign').textContent = MSG.heroSign;
-  document.getElementById('section-title').textContent = MSG.memoriesTitle;
-  document.getElementById('section-subtitle').textContent = MSG.memoriesSubtitle;
-  document.getElementById('footer-text').innerHTML = `<p>${MSG.footerText}</p>`;
+  const defaults = {
+    name: "Arpita",
+    badgeText: "Special Day • Birthday Edition",
+    greeting: "Dearest,",
+    tagline: "The Most Beautiful Birthday Girl",
+    heroWish: "Happy Birthday, Arpita! 🎂",
+    heroMessage: "Today the world became brighter and infinitely more beautiful because you're in it. Your grace, that enchanting smile in your red and black sari, and your warmth touch everyone around you.\n\nMay this year unfold with endless happiness, breathtaking adventures, and all the love your heart can hold.\n\nHere's to celebrating you today and forever. 🥂",
+    heroSign: "— With all my love ❤️",
+    ctaButton: "Celebrate Arpita ✨",
+    memoriesTitle: "Our Cherished Memories",
+    memoriesSubtitle: "Every frame holds a moment I treasure forever",
+    footerText: "Handcrafted with ❤️ exclusively for Arpita"
+  };
+
+  const M = Object.assign({}, defaults, data);
+
+  // Bind to DOM
+  const elBadge = document.getElementById('hero-badge');
+  const elGreeting = document.getElementById('hero-greeting');
+  const elName = document.getElementById('hero-name');
+  const elWish = document.getElementById('hero-wish');
+  const elMsg = document.getElementById('hero-message');
+  const elSign = document.getElementById('hero-sign');
+  const elCta = document.getElementById('cta-text');
+  const elMemTitle = document.getElementById('memories-title');
+  const elMemSub = document.getElementById('memories-subtitle');
+  const elFooter = document.getElementById('footer-text');
+
+  if (elBadge) elBadge.textContent = M.badgeText;
+  if (elGreeting) elGreeting.textContent = M.greeting;
+  if (elName) elName.textContent = M.name;
+  if (elWish) elWish.textContent = M.heroWish;
+  if (elMsg) elMsg.textContent = M.heroMessage;
+  if (elSign) elSign.textContent = M.heroSign;
+  if (elCta) elCta.textContent = M.ctaButton;
+  if (elMemTitle) elMemTitle.textContent = M.memoriesTitle;
+  if (elMemSub) elMemSub.textContent = M.memoriesSubtitle;
+  if (elFooter) elFooter.textContent = M.footerText;
+
+  // Typewriter effect on tagline
+  initTypewriter(M.tagline || defaults.tagline);
 }
 
-loadMessages();
+function initTypewriter(text) {
+  const el = document.getElementById('hero-tagline');
+  if (!el) return;
+  el.textContent = '';
+  let i = 0;
+  const speed = 65;
+
+  function type() {
+    if (i < text.length) {
+      el.textContent += text.charAt(i);
+      i++;
+      setTimeout(type, speed);
+    }
+  }
+  setTimeout(type, 400);
+}
 
 /* ═══════════════════════════════════════════
-   VOLUME GATE — require max volume
+   2. HIGH-FIDELITY WEB AUDIO SYNTHESIZER
+   (Guarantees zero-lag birthday melody on any device)
    ═══════════════════════════════════════════ */
-(() => {
-  const overlay  = document.getElementById('entry-overlay');
-  const slider   = document.getElementById('volume-slider');
-  const status   = document.getElementById('volume-status');
-  const btn      = document.getElementById('entry-btn');
-  const music    = document.getElementById('bg-music');
-  const main     = document.getElementById('main-content');
+function playSynthMelody() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!audioCtx) {
+      audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
 
-  const THRESHOLD = 95; // consider "full volume" at 95+
+    const notes = [
+      { f: 261.63, d: 0.35, p: 0.4 }, // C4
+      { f: 261.63, d: 0.15, p: 0.2 }, // C4
+      { f: 293.66, d: 0.5,  p: 0.55 }, // D4
+      { f: 261.63, d: 0.5,  p: 0.55 }, // C4
+      { f: 349.23, d: 0.5,  p: 0.55 }, // F4
+      { f: 329.63, d: 0.9,  p: 1.0 }, // E4
 
-  slider.addEventListener('input', () => {
+      { f: 261.63, d: 0.35, p: 0.4 }, // C4
+      { f: 261.63, d: 0.15, p: 0.2 }, // C4
+      { f: 293.66, d: 0.5,  p: 0.55 }, // D4
+      { f: 261.63, d: 0.5,  p: 0.55 }, // C4
+      { f: 392.00, d: 0.5,  p: 0.55 }, // G4
+      { f: 349.23, d: 0.9,  p: 1.0 }, // F4
+
+      { f: 261.63, d: 0.35, p: 0.4 }, // C4
+      { f: 261.63, d: 0.15, p: 0.2 }, // C4
+      { f: 523.25, d: 0.5,  p: 0.55 }, // C5
+      { f: 440.00, d: 0.5,  p: 0.55 }, // A4
+      { f: 349.23, d: 0.5,  p: 0.55 }, // F4
+      { f: 329.63, d: 0.5,  p: 0.55 }, // E4
+      { f: 293.66, d: 0.8,  p: 0.9 }, // D4
+
+      { f: 466.16, d: 0.35, p: 0.4 }, // Bb4
+      { f: 466.16, d: 0.15, p: 0.2 }, // Bb4
+      { f: 440.00, d: 0.5,  p: 0.55 }, // A4
+      { f: 349.23, d: 0.5,  p: 0.55 }, // F4
+      { f: 392.00, d: 0.5,  p: 0.55 }, // G4
+      { f: 349.23, d: 1.2,  p: 1.4 }  // F4
+    ];
+
+    let time = audioCtx.currentTime + 0.1;
+
+    function scheduleSong() {
+      notes.forEach(note => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        // Music-box bell overtone
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(note.f, time);
+
+        // Gentle bell envelope
+        gain.gain.setValueAtTime(0.001, time);
+        gain.gain.exponentialRampToValueAtTime(0.3, time + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + note.d);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(time);
+        osc.stop(time + note.d + 0.05);
+
+        time += note.p;
+      });
+      time += 0.8; // pause between loops
+    }
+
+    scheduleSong();
+    // Loop
+    const totalDuration = notes.reduce((acc, n) => acc + n.p, 0) + 0.8;
+    synthInterval = setInterval(() => {
+      if (isPlaying) {
+        scheduleSong();
+      }
+    }, totalDuration * 1000);
+
+  } catch (e) {
+    console.log('Synth error', e);
+  }
+}
+
+function stopSynth() {
+  if (synthInterval) {
+    clearInterval(synthInterval);
+    synthInterval = null;
+  }
+  if (audioCtx) {
+    try { audioCtx.suspend(); } catch (e) {}
+  }
+}
+
+/* ═══════════════════════════════════════════
+   3. AUDIO CONTROLLER (DUAL MODE)
+   ═══════════════════════════════════════════ */
+function startMusic() {
+  isPlaying = true;
+  const audio = document.getElementById('bg-music');
+  const pillWave = document.getElementById('music-wave');
+  if (pillWave) pillWave.classList.add('playing');
+
+  let audioPlayed = false;
+  if (audio) {
+    try {
+      audio.volume = 0.5;
+    } catch(e) {}
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          audioPlayed = true;
+        })
+        .catch(err => {
+          console.log('Audio file blocked or missing, using WebAudio synth chime');
+          playSynthMelody();
+        });
+    }
+  }
+
+  // If audio element takes too long or fails, ensure synth plays
+  setTimeout(() => {
+    if (!audioPlayed && (!audio || audio.paused || audio.currentTime === 0)) {
+      playSynthMelody();
+    }
+  }, 600);
+}
+
+function toggleMusic() {
+  const audio = document.getElementById('bg-music');
+  const pillWave = document.getElementById('music-wave');
+
+  if (isPlaying) {
+    isPlaying = false;
+    if (audio) audio.pause();
+    stopSynth();
+    if (pillWave) pillWave.classList.remove('playing');
+  } else {
+    isPlaying = true;
+    if (pillWave) pillWave.classList.add('playing');
+    if (audio) {
+      audio.play().catch(() => playSynthMelody());
+    } else {
+      playSynthMelody();
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════
+   4. VOLUME ENTRY GATE (FULL VOLUME REQUIREMENT)
+   ═══════════════════════════════════════════ */
+function initVolumeGate() {
+  const overlay = document.getElementById('entry-overlay');
+  const slider = document.getElementById('volume-slider');
+  const readout = document.getElementById('vol-readout');
+  const indicator = document.getElementById('volume-indicator');
+  const btn = document.getElementById('entry-btn');
+  const main = document.getElementById('main-content');
+
+  if (!slider || !btn) return;
+
+  function updateState() {
     const val = parseInt(slider.value, 10);
-    // Update slider track color
-    slider.style.background = `linear-gradient(to right, #c0392b ${val}%, rgba(255,255,255,.08) ${val}%)`;
+    readout.textContent = val + '%';
 
-    if (val >= THRESHOLD) {
-      status.textContent = '🔊 Volume is at maximum — you\'re ready!';
-      status.classList.add('ready');
+    // Slider track gradient
+    slider.style.background = `linear-gradient(to right, #e03c31 ${val}%, rgba(255,255,255,0.1) ${val}%)`;
+
+    if (val >= 100) {
+      indicator.textContent = '✓ Volume Confirmed at 100% (Maximum)';
+      indicator.classList.add('ready');
       btn.disabled = false;
       btn.classList.add('unlocked');
-      btn.querySelector('.btn-lock').textContent = '🔓';
-      btn.querySelector('.btn-text').textContent = 'Enter ✨';
+      btn.querySelector('.btn-icon').textContent = '🔓';
+      btn.querySelector('.btn-text').textContent = 'Unlock The Celebration ✨';
     } else {
-      status.textContent = `Volume: ${val}% — slide to 100% to unlock`;
-      status.classList.remove('ready');
+      indicator.textContent = `Slide to 100% to unlock (Currently ${val}%)`;
+      indicator.classList.remove('ready');
       btn.disabled = true;
       btn.classList.remove('unlocked');
-      btn.querySelector('.btn-lock').textContent = '🔒';
-      btn.querySelector('.btn-text').textContent = 'Turn volume to max to enter';
+      btn.querySelector('.btn-icon').textContent = '🔒';
+      btn.querySelector('.btn-text').textContent = 'Set Volume to 100% to Unlock';
     }
-  });
+  }
 
-  // Trigger initial state
-  slider.dispatchEvent(new Event('input'));
+  slider.addEventListener('input', updateState);
+  updateState();
 
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
 
-    overlay.classList.add('fade-out');
-
     // Start music
-    music.volume = 0;
-    music.play().catch(() => {});
-    let vol = 0;
-    const fadeIn = setInterval(() => {
-      vol = Math.min(vol + 0.02, 0.6);
-      music.volume = vol;
-      if (vol >= 0.6) clearInterval(fadeIn);
-    }, 50);
+    startMusic();
 
-    // Show main content
-    main.classList.remove('hidden');
+    // Fade out overlay
+    overlay.classList.add('fade-out');
+    main.classList.remove('content-hidden');
 
-    // Remove overlay after transition
-    setTimeout(() => overlay.remove(), 900);
+    // Confetti celebration
+    triggerConfetti();
+
+    setTimeout(() => {
+      overlay.remove();
+    }, 850);
   });
-})();
+}
 
 /* ═══════════════════════════════════════════
-   MEMORY CAROUSEL
+   5. MEMORY CAROUSEL (11 UNIQUE REAL PHOTOS)
    ═══════════════════════════════════════════ */
-(() => {
-  const MEMORY_COUNT = 11;
-  const AUTOPLAY_MS  = 4500;
-
-  const track    = document.getElementById('carousel-track');
+function initCarousel() {
+  const TOTAL_SLIDES = 11;
+  const AUTOPLAY_TIME = 4500;
+  const track = document.getElementById('carousel-track');
   const dotsWrap = document.getElementById('carousel-dots');
+  const counter = document.getElementById('meta-counter');
+  const prevBtn = document.getElementById('carousel-prev');
+  const nextBtn = document.getElementById('carousel-next');
 
-  // Build slides — no fallback placeholders; use real images only
-  for (let i = 0; i < MEMORY_COUNT; i++) {
+  if (!track || !dotsWrap) return;
+
+  // Render slides dynamically
+  for (let i = 1; i <= TOTAL_SLIDES; i++) {
     const slide = document.createElement('div');
-    slide.className = 'carousel-slide';
+    slide.className = 'carousel-slide-item';
 
     const img = document.createElement('img');
-    img.src = `images/memory${i + 1}.jpg`;
-    img.alt = `Memory ${i + 1}`;
-    img.loading = i === 0 ? 'eager' : 'lazy';
+    img.src = `images/memory${i}.jpg`;
+    img.alt = `Cherished Memory ${i}`;
+    img.loading = i <= 2 ? 'eager' : 'lazy';
 
     slide.appendChild(img);
     track.appendChild(slide);
 
+    // Dot chip
     const dot = document.createElement('button');
-    dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+    dot.className = 'carousel-dot-chip' + (i === 1 ? ' active' : '');
+    dot.setAttribute('aria-label', `Go to slide ${i}`);
     dotsWrap.appendChild(dot);
   }
 
-  let current = 0;
-  let autoTimer;
-  const slides = track.querySelectorAll('.carousel-slide');
-  const dots   = dotsWrap.querySelectorAll('.carousel-dot');
+  let currentIndex = 0;
+  let autoTimer = null;
+  const dots = dotsWrap.querySelectorAll('.carousel-dot-chip');
 
-  function goTo(index) {
-    current = ((index % MEMORY_COUNT) + MEMORY_COUNT) % MEMORY_COUNT;
-    track.style.transform = `translateX(-${current * 100}%)`;
-    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+  function updateSlide(idx) {
+    currentIndex = ((idx % TOTAL_SLIDES) + TOTAL_SLIDES) % TOTAL_SLIDES;
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === currentIndex);
+    });
+
+    if (counter) {
+      const padIndex = (currentIndex + 1).toString().padStart(2, '0');
+      counter.textContent = `${padIndex} / ${TOTAL_SLIDES.toString().padStart(2, '0')}`;
+    }
   }
 
-  function next() { goTo(current + 1); }
-  function prev() { goTo(current - 1); }
+  function nextSlide() { updateSlide(currentIndex + 1); }
+  function prevSlide() { updateSlide(currentIndex - 1); }
 
-  document.querySelector('.carousel-prev').addEventListener('click', () => { prev(); resetAuto(); });
-  document.querySelector('.carousel-next').addEventListener('click', () => { next(); resetAuto(); });
+  function startAuto() {
+    stopAuto();
+    autoTimer = setInterval(nextSlide, AUTOPLAY_TIME);
+  }
 
-  dots.forEach((dot, i) => {
-    dot.addEventListener('click', () => { goTo(i); resetAuto(); });
+  function stopAuto() {
+    if (autoTimer) clearInterval(autoTimer);
+  }
+
+  if (prevBtn) prevBtn.addEventListener('click', () => { prevSlide(); startAuto(); });
+  if (nextBtn) nextBtn.addEventListener('click', () => { nextSlide(); startAuto(); });
+
+  dots.forEach((dot, idx) => {
+    dot.addEventListener('click', () => {
+      updateSlide(idx);
+      startAuto();
+    });
   });
 
-  function startAuto() { autoTimer = setInterval(next, AUTOPLAY_MS); }
-  function resetAuto() { clearInterval(autoTimer); startAuto(); }
+  const frame = document.querySelector('.carousel-glass-frame');
+  if (frame) {
+    frame.addEventListener('mouseenter', stopAuto);
+    frame.addEventListener('mouseleave', startAuto);
+
+    // Touch support
+    let startX = 0;
+    frame.addEventListener('touchstart', e => {
+      startX = e.changedTouches[0].clientX;
+    }, { passive: true });
+
+    frame.addEventListener('touchend', e => {
+      const deltaX = e.changedTouches[0].clientX - startX;
+      if (Math.abs(deltaX) > 40) {
+        if (deltaX < 0) nextSlide();
+        else prevSlide();
+        startAuto();
+      }
+    }, { passive: true });
+  }
+
+  updateSlide(0);
   startAuto();
-
-  const container = document.querySelector('.carousel-container');
-  container.addEventListener('mouseenter', () => clearInterval(autoTimer));
-  container.addEventListener('mouseleave', startAuto);
-
-  // Touch swipe
-  let touchX = 0;
-  container.addEventListener('touchstart', e => { touchX = e.changedTouches[0].clientX; }, { passive: true });
-  container.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - touchX;
-    if (Math.abs(dx) > 40) {
-      dx < 0 ? next() : prev();
-      resetAuto();
-    }
-  }, { passive: true });
-})();
+}
 
 /* ═══════════════════════════════════════════
-   FLOATING PARTICLES — Red & Gold dust
+   6. CELEBRATION CHIPS & CONFETTI
    ═══════════════════════════════════════════ */
-(() => {
+function triggerConfetti() {
+  const colors = ['#e03c31', '#e67e22', '#ffffff', '#ffd166', '#ff4757'];
+  const count = 75;
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-burst';
+    el.style.position = 'fixed';
+    el.style.zIndex = '99999';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '-10px';
+    el.style.width = (Math.random() * 8 + 6) + 'px';
+    el.style.height = (Math.random() * 12 + 6) + 'px';
+    el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    el.style.borderRadius = '2px';
+    el.style.pointerEvents = 'none';
+    el.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+    const duration = Math.random() * 2.5 + 2;
+    el.style.transition = `transform ${duration}s cubic-bezier(0.25, 1, 0.5, 1), top ${duration}s cubic-bezier(0.25, 1, 0.5, 1), opacity ${duration}s`;
+
+    document.body.appendChild(el);
+
+    setTimeout(() => {
+      el.style.top = (window.innerHeight + 20) + 'px';
+      el.style.transform = `rotate(${Math.random() * 720}deg) translateX(${(Math.random() - 0.5) * 150}px)`;
+      el.style.opacity = '0';
+    }, 20);
+
+    setTimeout(() => el.remove(), duration * 1000);
+  }
+}
+
+function showerHearts() {
+  const count = 30;
+  for (let i = 0; i < count; i++) {
+    const heart = document.createElement('div');
+    heart.textContent = Math.random() > 0.4 ? '💖' : '❤️';
+    heart.style.position = 'fixed';
+    heart.style.zIndex = '9999';
+    heart.style.left = Math.random() * 95 + 'vw';
+    heart.style.bottom = '-20px';
+    heart.style.fontSize = (Math.random() * 20 + 16) + 'px';
+    heart.style.pointerEvents = 'none';
+    heart.style.transition = `all ${Math.random() * 2 + 2.5}s cubic-bezier(0.25, 1, 0.5, 1)`;
+
+    document.body.appendChild(heart);
+
+    setTimeout(() => {
+      heart.style.bottom = (window.innerHeight + 50) + 'px';
+      heart.style.transform = `translateX(${(Math.random() - 0.5) * 80}px) scale(1.3)`;
+      heart.style.opacity = '0';
+    }, 20);
+
+    setTimeout(() => heart.remove(), 4500);
+  }
+}
+
+function initChips() {
+  const chipConfetti = document.getElementById('chip-confetti');
+  const chipLove = document.getElementById('chip-love');
+  const chipMusic = document.getElementById('chip-music');
+  const chipMemories = document.getElementById('chip-memories');
+  const ctaBtn = document.getElementById('cta-btn');
+  const musicPill = document.getElementById('music-pill');
+
+  if (chipConfetti) chipConfetti.addEventListener('click', triggerConfetti);
+  if (chipLove) chipLove.addEventListener('click', showerHearts);
+  if (chipMusic) chipMusic.addEventListener('click', toggleMusic);
+  if (musicPill) musicPill.addEventListener('click', toggleMusic);
+
+  if (chipMemories) {
+    chipMemories.addEventListener('click', () => {
+      const section = document.getElementById('memories');
+      if (section) section.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  if (ctaBtn) {
+    ctaBtn.addEventListener('click', () => {
+      showerHearts();
+      triggerConfetti();
+      const section = document.getElementById('memories');
+      if (section) {
+        setTimeout(() => section.scrollIntoView({ behavior: 'smooth' }), 500);
+      }
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════
+   7. AMBIENT PARTICLES (RED & GOLD DUST)
+   ═══════════════════════════════════════════ */
+function initParticles() {
   const canvas = document.getElementById('particles');
-  const ctx    = canvas.getContext('2d');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
   let W, H;
   const particles = [];
-  const COUNT = 50;
+  const COUNT = 45;
 
   function resize() {
-    W = canvas.width  = window.innerWidth;
+    W = canvas.width = window.innerWidth;
     H = canvas.height = window.innerHeight;
   }
   resize();
   window.addEventListener('resize', resize);
 
-  class Particle {
+  class Ember {
     constructor() { this.reset(true); }
     reset(init) {
-      this.x  = Math.random() * W;
-      this.y  = init ? Math.random() * H : H + 10;
-      this.r  = Math.random() * 2 + .4;
-      this.vy = -(Math.random() * .3 + .08);
-      this.vx = (Math.random() - .5) * .15;
-      this.a  = Math.random() * .3 + .05;
+      this.x = Math.random() * W;
+      this.y = init ? Math.random() * H : H + 10;
+      this.r = Math.random() * 2 + 0.6;
+      this.vy = -(Math.random() * 0.35 + 0.1);
+      this.vx = (Math.random() - 0.5) * 0.2;
+      this.alpha = Math.random() * 0.35 + 0.1;
       this.life = 0;
-      this.maxLife = Math.random() * 600 + 300;
-      // Alternate between red and gold particles
-      this.isRed = Math.random() > 0.5;
+      this.maxLife = Math.random() * 500 + 300;
+      this.isRed = Math.random() > 0.45;
     }
     update() {
       this.x += this.vx;
@@ -214,20 +526,31 @@ loadMessages();
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
       if (this.isRed) {
-        ctx.fillStyle = `rgba(192, 57, 43, ${this.a * fade})`;
+        ctx.fillStyle = `rgba(224, 60, 49, ${this.alpha * fade})`;
       } else {
-        ctx.fillStyle = `rgba(201, 168, 76, ${this.a * fade * 0.7})`;
+        ctx.fillStyle = `rgba(230, 126, 34, ${this.alpha * fade * 0.8})`;
       }
       ctx.fill();
     }
   }
 
-  for (let i = 0; i < COUNT; i++) particles.push(new Particle());
+  for (let i = 0; i < COUNT; i++) particles.push(new Ember());
 
-  function animate() {
+  function render() {
     ctx.clearRect(0, 0, W, H);
     particles.forEach(p => { p.update(); p.draw(); });
-    requestAnimationFrame(animate);
+    requestAnimationFrame(render);
   }
-  animate();
-})();
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   INITIALIZE EVERYTHING
+   ═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  loadMessages();
+  initVolumeGate();
+  initCarousel();
+  initChips();
+  initParticles();
+});
