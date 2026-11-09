@@ -25,7 +25,7 @@
    MEMORY CAROUSEL
    ═══════════════════════════════════════════ */
 (() => {
-  const MEMORY_COUNT = 6;
+  const MEMORY_COUNT = 11;
   const AUTOPLAY_MS  = 4500;
 
   const fallbacks = [
@@ -35,6 +35,11 @@
     'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=800&q=80',
     'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
     'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=800&q=80',
+    'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=800&q=80',
+    'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800&q=80',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=80',
+    'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=800&q=80',
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
   ];
 
   const track = document.getElementById('carousel-track');
