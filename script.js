@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   MODERN BIRTHDAY INTERACTIVITY  —  ARPITA'S 19TH BIRTHDAY
+   MODERN BIRTHDAY INTERACTIVITY  —  ARPITA'S 20TH BIRTHDAY
    ═══════════════════════════════════════════════════════════ */
 
 let isPlaying = false;
@@ -7,7 +7,7 @@ let audioCtx = null;
 let synthInterval = null;
 
 /* ═══════════════════════════════════════════
-   1. LOAD MESSAGES FROM JSON (Date, Age, Text)
+   1. LOAD MESSAGES FROM JSON (Date, Title, Text)
    ═══════════════════════════════════════════ */
 async function loadMessages() {
   let data = {};
@@ -23,34 +23,33 @@ async function loadMessages() {
   const defaults = {
     name: "Arpita",
     birthDate: "13th November",
-    age: "19",
-    badgeText: "13th November • Celebrating Chapter 19",
+    birthdayTitle: "20th Birthday",
+    badgeText: "13th November • 20th Birthday",
     greeting: "Dearest,",
-    tagline: "Turning 19 & More Beautiful Than Ever",
-    heroWish: "Happy 19th Birthday, Arpita!",
-    heroMessage: "Today marks the beginning of Chapter 19 — and the world is infinitely more radiant because you are in it. From your graceful smile to that enchanting look in your red and black sari, every moment with you is magic.\n\nMay this 19th year bring you boundless happiness, thrilling milestones, and every dream your heart cherishes.\n\nHere's to celebrating you on your special day and always.",
-    heroSign: "— With all my love",
-    ctaButton: "Celebrate Chapter 19",
-    memoriesTitle: "19 Years & Cherished Frames",
+    tagline: "Happy 20th Birthday to the Love of My Life",
+    heroWish: "Happy 20th Birthday, Arpita!",
+    heroMessage: "Today marks your 20th birthday — and the world is infinitely more radiant because you are in it. From your graceful smile to that enchanting look in your red and black sari, every single moment with you is pure magic.\n\nMay this year unfold with boundless joy, thrilling milestones, and every dream your heart has ever held.\n\nHere's to celebrating you on your special day and forever.",
+    heroSign: "— With all my love, your Hubby ❤️",
+    ctaButton: "Celebrate & Cut Cake 🎂",
+    memoriesTitle: "Our Cherished Memories",
     memoriesSubtitle: "A visual timeline of moments that mean everything to me",
-    footerText: "Handcrafted with care exclusively for Arpita's 19th Birthday • 13th November"
+    footerText: "Handcrafted with ❤️ exclusively for Arpita's 20th Birthday • 13th November"
   };
 
   const M = Object.assign({}, defaults, data);
 
-  // Bind to DOM
   const setTxt = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   };
 
-  setTxt('overlay-badge', `${M.birthDate.toUpperCase()} • CHAPTER ${M.age}`);
-  setTxt('hero-badge', M.badgeText || `${M.birthDate} • Celebrating Chapter ${M.age}`);
-  setTxt('hero-age-badge', `Age ${M.age}`);
+  setTxt('overlay-badge', `${M.birthDate.toUpperCase()} • ${M.birthdayTitle.toUpperCase()}`);
+  setTxt('hero-badge', M.badgeText || `${M.birthDate} • ${M.birthdayTitle}`);
+  setTxt('hero-celebration-badge', 'Birthday Girl');
   setTxt('hero-greeting', M.greeting);
   setTxt('hero-name', M.name);
   setTxt('meta-date', M.birthDate);
-  setTxt('meta-chapter', `Chapter ${M.age}`);
+  setTxt('meta-title', M.birthdayTitle);
   setTxt('hero-wish', M.heroWish);
   setTxt('hero-message', M.heroMessage);
   setTxt('hero-sign', M.heroSign);
@@ -382,7 +381,56 @@ function initCarousel() {
 }
 
 /* ═══════════════════════════════════════════
-   6. CELEBRATION EFFECTS (ICONS & SPARKS)
+   6. GLOBAL CLICK-ANYWHERE LOVE ICON EFFECT
+   ═══════════════════════════════════════════ */
+function spawnClickLoveIcon(x, y) {
+  const count = 3 + Math.floor(Math.random() * 3);
+  const hearts = [
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="#e03c31" stroke="#e03c31" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="#e67e22" stroke="#e67e22" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="#ff4757" stroke="#ff4757" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+  ];
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.innerHTML = hearts[Math.floor(Math.random() * hearts.length)];
+    el.style.position = 'fixed';
+    el.style.zIndex = '99999';
+    el.style.left = (x + (Math.random() - 0.5) * 30) + 'px';
+    el.style.top = (y + (Math.random() - 0.5) * 20) + 'px';
+    el.style.pointerEvents = 'none';
+    el.style.filter = 'drop-shadow(0 0 6px rgba(224, 60, 49, 0.6))';
+    el.style.transform = 'translate(-50%, -50%) scale(0.6)';
+    el.style.opacity = '1';
+
+    const duration = 1.2 + Math.random() * 0.8;
+    const destX = (Math.random() - 0.5) * 80;
+    const destY = -80 - Math.random() * 60;
+    const rot = (Math.random() - 0.5) * 60;
+
+    el.style.transition = `transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1), opacity ${duration}s ease-out`;
+
+    document.body.appendChild(el);
+
+    requestAnimationFrame(() => {
+      el.style.transform = `translate(calc(-50% + ${destX}px), calc(-50% + ${destY}px)) scale(1.2) rotate(${rot}deg)`;
+      el.style.opacity = '0';
+    });
+
+    setTimeout(() => el.remove(), duration * 1000);
+  }
+}
+
+function initGlobalClickLove() {
+  window.addEventListener('click', (e) => {
+    // Avoid double triggering if clicking slider or input
+    if (e.target.tagName === 'INPUT') return;
+    spawnClickLoveIcon(e.clientX, e.clientY);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   7. CELEBRATION EFFECTS
    ═══════════════════════════════════════════ */
 function triggerSparkles() {
   const colors = ['#e03c31', '#e67e22', '#ffffff', '#ffd166', '#ff4757'];
@@ -448,8 +496,6 @@ function initChips() {
   const chipLove = document.getElementById('chip-love');
   const chipMusic = document.getElementById('chip-music');
   const chipMemories = document.getElementById('chip-memories');
-  const chipCalendar = document.getElementById('chip-calendar');
-  const ctaBtn = document.getElementById('cta-btn');
   const musicPill = document.getElementById('music-pill');
 
   if (chipConfetti) chipConfetti.addEventListener('click', triggerSparkles);
@@ -457,34 +503,16 @@ function initChips() {
   if (chipMusic) chipMusic.addEventListener('click', toggleMusic);
   if (musicPill) musicPill.addEventListener('click', toggleMusic);
 
-  if (chipCalendar) {
-    chipCalendar.addEventListener('click', () => {
-      triggerSparkles();
-      showerHeartIcons();
-    });
-  }
-
   if (chipMemories) {
     chipMemories.addEventListener('click', () => {
       const section = document.getElementById('memories');
       if (section) section.scrollIntoView({ behavior: 'smooth' });
     });
   }
-
-  if (ctaBtn) {
-    ctaBtn.addEventListener('click', () => {
-      showerHeartIcons();
-      triggerSparkles();
-      const section = document.getElementById('memories');
-      if (section) {
-        setTimeout(() => section.scrollIntoView({ behavior: 'smooth' }), 500);
-      }
-    });
-  }
 }
 
 /* ═══════════════════════════════════════════
-   7. ANIMATED PARTICLES (RED & GOLD EMBERS)
+   8. ANIMATED PARTICLES (RED & GOLD EMBERS)
    ═══════════════════════════════════════════ */
 function initParticles() {
   const canvas = document.getElementById('particles');
@@ -552,4 +580,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initCarousel();
   initChips();
   initParticles();
+  initGlobalClickLove();
 });

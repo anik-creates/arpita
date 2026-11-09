@@ -602,6 +602,7 @@ body {
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(224, 60, 49, 0.32), 0 4px 12px rgba(0, 0, 0, 0.5);
   transition: all 0.3s var(--ease);
+  text-decoration: none;
 }
 
 .primary-action-btn:hover {
@@ -628,6 +629,7 @@ body {
   cursor: pointer;
   backdrop-filter: blur(8px);
   transition: all 0.25s var(--ease);
+  text-decoration: none;
 }
 
 .chip-btn:hover {
