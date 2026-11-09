@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   CAKE PAGE LOGIC  —  MICROPHONE BLOW, CAKE CUTTING, QUIZ & LETTER
+   CAKE PAGE LOGIC  —  BLOW DETECTION, REAL-TIME SLICE & SECRET LETTER
    ═══════════════════════════════════════════════════════════ */
 
 let quizData = [];
@@ -13,6 +13,10 @@ let audioStream = null;
 let audioContext = null;
 let analyser = null;
 let micAnimationId = null;
+
+// Slicing drag state
+let isDraggingKnife = false;
+let cutProgress = 0; // 0.0 to 1.0
 
 /* ═══════════════════════════════════════════
    1. LOAD DATA FROM JSON
@@ -63,12 +67,12 @@ function getDefaultLetter() {
   return {
     title: "A Secret Letter From Your Hubby ❤️",
     subtitle: "Only for my real Arpi • 13th November",
-    content: "My Sweetest Arpi,\n\nHappy 20th Birthday, my love!\n\nFrom that very first day we met at Chunkutia with me in that white shirt, to that magical first kiss at Rajendrapur, every memory with you has been etched forever into my heart.\n\nYou look so breathtaking in that red and black sari, but even more beautiful is the warmth, laughter, and kindness you bring into my world every single day.\n\nThank you for choosing me, for believing in us, and for being my greatest blessing. On this milestone 20th birthday, I promise to hold your hand, stand by your side through every storm and sunshine, and love you more and more with each passing breath.\n\nForever & always yours,\nAnik (Your Hubby) ❤️"
+    content: "My Sweetest Arpi (Mona),\n\nHappy 20th Birthday, my love!\n\nFrom that very first day we met at Chunkutia with me in that white shirt, to that magical first kiss at Rajendrapur, every memory with you has been etched forever into my heart.\n\nYou look so breathtaking in that red and black sari, but even more beautiful is the warmth, laughter, and kindness you bring into my world every single day.\n\nThank you for choosing me, for believing in us, and for being my greatest blessing. On this milestone 20th birthday, I promise to hold your hand, stand by your side through every storm and sunshine, and love you more and more with each passing breath.\n\nForever & always yours,\nAnik (Your Hubby) ❤️"
   };
 }
 
 /* ═══════════════════════════════════════════
-   2. MICROPHONE PERMISSION MODAL & AUDIO BLOW
+   2. PRECISION BLOW DETECTION (WIND TURBULENCE ONLY)
    ═══════════════════════════════════════════ */
 function initMicPermission() {
   const allowBtn = document.getElementById('allow-mic-btn');
@@ -77,10 +81,7 @@ function initMicPermission() {
   if (!allowBtn) return;
 
   allowBtn.addEventListener('click', async () => {
-    // Start microphone from this direct user click gesture
     await startMicrophoneStream();
-
-    // Dismiss entry modal
     if (entryModal) {
       entryModal.classList.remove('active');
     }
@@ -98,7 +99,7 @@ async function startMicrophoneStream() {
   }
 
   try {
-    // Disable noise suppression & echo cancellation so breath sounds are not filtered out!
+    // Disable noise suppression & echo cancellation so raw wind pressure reaches analyser
     const constraints = {
       audio: {
         echoCancellation: false,
@@ -113,66 +114,94 @@ async function startMicrophoneStream() {
     audioContext = new AudioCtx();
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.2;
+    analyser.smoothingTimeConstant = 0.15;
 
     const source = audioContext.createMediaStreamSource(audioStream);
     source.connect(analyser);
 
     if (micIcon) micIcon.classList.add('active');
-    if (meterText) meterText.textContent = "Mic Live! Blow hard into your device! 💨";
+    if (meterText) meterText.textContent = "Listening... Blow hard directly into mic! 💨";
 
     const bufferLength = analyser.frequencyBinCount;
     const timeData = new Uint8Array(bufferLength);
     const freqData = new Uint8Array(bufferLength);
 
-    let blowCounter = 0;
+    let blowSustainFrames = 0;
 
-    function checkAudioInput() {
+    function analyzeSound() {
       if (candlesBlown) return;
 
       analyser.getByteTimeDomainData(timeData);
       analyser.getByteFrequencyData(freqData);
 
-      // 1. Time-domain turbulence (breath blowing directly into mic creates high amplitude swings)
-      let sumSquares = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        let norm = (timeData[i] - 128) / 128.0;
-        sumSquares += norm * norm;
+      // 1. Low-frequency wind rumble (0 - 150 Hz): Bins 0 to 4
+      // Direct breath hitting mic capsule causes violent low-end diaphragm displacement
+      let lowRumble = 0;
+      for (let i = 0; i <= 3; i++) {
+        lowRumble += freqData[i];
       }
-      let rms = Math.sqrt(sumSquares / bufferLength);
+      lowRumble /= 4;
 
-      // 2. Frequency-domain energy
-      let freqSum = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        freqSum += freqData[i];
+      // 2. Mid voice energy (200 - 1000 Hz): Bins 5 to 20
+      // Normal speech concentrates energy here with distinct harmonic formants
+      let midVoice = 0;
+      for (let i = 5; i <= 20; i++) {
+        midVoice += freqData[i];
       }
-      let freqAvg = freqSum / bufferLength;
+      midVoice /= 16;
 
-      // Visual meter calculation
-      let combinedScore = Math.min(100, Math.round((rms * 120) + (freqAvg * 1.5)));
+      // 3. High hiss breath turbulence (1200 - 3000 Hz): Bins 25 to 60
+      let highHiss = 0;
+      for (let i = 25; i <= 60; i++) {
+        highHiss += freqData[i];
+      }
+      highHiss /= 36;
+
+      // 4. Time domain amplitude swing
+      let maxDelta = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        let delta = Math.abs(timeData[i] - 128);
+        if (delta > maxDelta) maxDelta = delta;
+      }
+
+      // Live meter response
+      let displayScore = Math.min(100, Math.round((lowRumble * 0.6) + (highHiss * 0.7) + (maxDelta * 0.5)));
       if (meterFill) {
-        meterFill.style.width = Math.max(5, combinedScore) + '%';
+        meterFill.style.width = Math.max(5, displayScore) + '%';
       }
 
-      // Detection: blowing into phone/laptop mic produces RMS > 0.12 OR freqAvg > 30
-      if (rms > 0.12 || freqAvg > 28 || combinedScore > 45) {
-        blowCounter++;
-        if (blowCounter >= 2) {
+      /*
+        BLOW SIGNATURE CRITERIA:
+        - Wind rumble > 70 OR (maxDelta > 28 AND highHiss > 32)
+        - Speech rejection: If midVoice is way higher than lowRumble and lowRumble < 50, it's talking/music, NOT blowing!
+      */
+      const isBreathTurbulence = (lowRumble > 65 || (maxDelta > 28 && highHiss > 30));
+      const isNotJustVoice = (lowRumble > midVoice * 0.7) || (lowRumble > 65);
+
+      if (isBreathTurbulence && isNotJustVoice) {
+        blowSustainFrames++;
+        if (meterText) meterText.textContent = "Blowing detected! Keep blowing... 💨";
+
+        // Must be sustained for at least 5 frames (~100ms) to ensure it's a real breath
+        if (blowSustainFrames >= 5) {
           extinguishCandles();
           return;
         }
       } else {
-        blowCounter = Math.max(0, blowCounter - 1);
+        blowSustainFrames = Math.max(0, blowSustainFrames - 1);
+        if (meterText && blowSustainFrames === 0) {
+          meterText.textContent = "Listening... Blow directly into mic! 💨";
+        }
       }
 
-      micAnimationId = requestAnimationFrame(checkAudioInput);
+      micAnimationId = requestAnimationFrame(analyzeSound);
     }
 
-    checkAudioInput();
+    analyzeSound();
 
   } catch (err) {
-    console.log("Mic access note:", err);
-    if (meterText) meterText.textContent = "Mic optional • Tap any candle to blow!";
+    console.log("Mic note:", err);
+    if (meterText) meterText.textContent = "Mic optional • Tap candle to blow!";
   }
 }
 
@@ -180,13 +209,12 @@ function extinguishCandles() {
   if (candlesBlown) return;
   candlesBlown = true;
 
-  // Stop mic capture
   if (micAnimationId) cancelAnimationFrame(micAnimationId);
   if (audioStream) {
     audioStream.getTracks().forEach(track => track.stop());
   }
 
-  // Extinguish each candle with realistic staggered smoke
+  // Staggered candle extinction with smoke
   const candles = document.querySelectorAll('.candle');
   candles.forEach((c, idx) => {
     setTimeout(() => {
@@ -194,7 +222,7 @@ function extinguishCandles() {
     }, idx * 100);
   });
 
-  // Update instruction & reveal knife
+  // Update instruction & activate interactive knife cutting
   setTimeout(() => {
     const stepInd = document.getElementById('step-indicator');
     const title = document.getElementById('instruction-title');
@@ -204,25 +232,32 @@ function extinguishCandles() {
 
     if (stepInd) stepInd.textContent = "STEP 2 OF 3";
     if (title) title.textContent = "Candles Blown! Make a Wish! ✨";
-    if (desc) desc.textContent = "Now take the chef's knife and click the cake to slice it!";
+    if (desc) desc.textContent = "Take the knife and drag it down across the heart cake to slice it!";
     if (meterWrap) meterWrap.style.display = 'none';
 
-    if (knife) knife.classList.add('visible');
+    if (knife) {
+      knife.classList.add('visible');
+    }
 
     triggerSparkles();
   }, 650);
 }
 
 /* ═══════════════════════════════════════════
-   3. CAKE CUTTING & CANDLE CLICK BYPASS
+   3. REAL-TIME INTERACTIVE CAKE CUTTING
+   (Cake cuts dynamically as knife moves!)
    ═══════════════════════════════════════════ */
-function initCakeCutting() {
+function initInteractiveCakeCutting() {
   const knife = document.getElementById('cake-knife');
   const cakeWrap = document.getElementById('heart-cake-wrap');
+  const cutLine = document.getElementById('cake-cut-line');
+  const cakeStage = document.getElementById('cake-stage');
+  const leftHalf = document.getElementById('cake-half-left');
+  const rightHalf = document.getElementById('cake-half-right');
+  const knifeHint = document.getElementById('knife-hint');
   const candles = document.querySelectorAll('.candle');
-  const cornerBtn = document.getElementById('secret-corner-btn');
 
-  // Secret bypass: clicking any candle blows them out
+  // Secret candle click bypass
   candles.forEach(candle => {
     candle.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -232,51 +267,168 @@ function initCakeCutting() {
     });
   });
 
-  // Secret corner bypass icon
-  if (cornerBtn) {
-    cornerBtn.addEventListener('click', () => {
-      if (!candlesBlown) {
-        extinguishCandles();
+  if (!knife || !cakeWrap) return;
+
+  // Cutting coordinate bounds in SVG (top: y=75, bottom: y=395, height=320)
+  const SVG_TOP = 75;
+  const SVG_BOTTOM = 395;
+  const TOTAL_CUT_HEIGHT = SVG_BOTTOM - SVG_TOP;
+
+  function updateKnifeAndCut(clientX, clientY) {
+    if (!candlesBlown || cakeSliced) return;
+
+    const rect = cakeWrap.getBoundingClientRect();
+    const stageRect = cakeStage.getBoundingClientRect();
+
+    // Position knife relative to cake stage
+    const knifeX = clientX - stageRect.left;
+    const knifeY = clientY - stageRect.top;
+
+    knife.style.transform = `translate(${knifeX}px, ${knifeY}px) rotate(15deg)`;
+
+    // Calculate vertical progress across the cake (0.0 to 1.0)
+    const cakeTopY = rect.top + (rect.height * 0.16);
+    const cakeBottomY = rect.top + (rect.height * 0.88);
+    const cakeHeight = cakeBottomY - cakeTopY;
+
+    if (clientY >= cakeTopY) {
+      const progress = Math.min(1.0, Math.max(0.0, (clientY - cakeTopY) / cakeHeight));
+      cutProgress = Math.max(cutProgress, progress);
+
+      // Dynamically draw cut line in SVG
+      if (cutLine) {
+        cutLine.classList.add('cutting-active');
+        const currentY2 = SVG_TOP + (cutProgress * TOTAL_CUT_HEIGHT);
+        cutLine.setAttribute('y2', currentY2);
       }
-    });
+
+      // Spawn sparks at the knife cut point
+      if (Math.random() > 0.4) {
+        spawnKnifeSparks(clientX, clientY);
+      }
+
+      if (knifeHint) {
+        knifeHint.textContent = `Cutting: ${Math.round(cutProgress * 100)}% 🔪`;
+      }
+
+      // When cut reaches bottom (>= 85%) -> Slice complete!
+      if (cutProgress >= 0.85) {
+        completeCakeSlice();
+      }
+    }
   }
 
-  // Cake cutting logic
-  function cutCake() {
-    if (!candlesBlown || cakeSliced) return;
+  function completeCakeSlice() {
+    if (cakeSliced) return;
     cakeSliced = true;
 
-    // Knife cutting animation
-    if (knife) knife.classList.add('cutting');
+    // Split heart halves apart
+    if (leftHalf) leftHalf.classList.add('cut-done');
+    if (rightHalf) rightHalf.classList.add('cut-done');
 
-    // Show cut line
+    // Finalize cut line
+    if (cutLine) {
+      cutLine.setAttribute('y2', SVG_BOTTOM);
+      cutLine.classList.add('cut-complete');
+    }
+
+    // Hide knife smoothly
+    if (knife) {
+      knife.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      knife.style.opacity = '0';
+      knife.style.transform = 'translate(50%, 200px) rotate(45deg)';
+    }
+
+    triggerSparkles();
+    showerHeartIcons();
+
+    // Update instruction & reveal secret message button
     setTimeout(() => {
-      const cutLine = document.getElementById('cake-cut-line');
-      if (cutLine) cutLine.classList.add('sliced');
-
-      triggerSparkles();
-      showerHeartIcons();
-
-      // Update instructions
       const stepInd = document.getElementById('step-indicator');
       const title = document.getElementById('instruction-title');
       const desc = document.getElementById('instruction-desc');
       const secretWrap = document.getElementById('secret-btn-wrap');
 
       if (stepInd) stepInd.textContent = "STEP 3 OF 3";
-      if (title) title.textContent = "Cake Sliced! Happy 20th Birthday! 🍰";
-      if (desc) desc.textContent = "Your Hubby has left you a secret birthday message below.";
+      if (title) title.textContent = "Cake Sliced! Happy 20th Birthday, Mona! 🍰";
+      if (desc) desc.textContent = "Your Hubby has a secret message waiting for you below.";
       if (secretWrap) secretWrap.classList.add('visible');
-
-    }, 600);
+    }, 450);
   }
 
-  if (knife) knife.addEventListener('click', cutCake);
-  if (cakeWrap) cakeWrap.addEventListener('click', () => {
-    if (candlesBlown && !cakeSliced) {
-      cutCake();
+  // Mouse drag events
+  cakeStage.addEventListener('mousedown', (e) => {
+    if (!candlesBlown || cakeSliced) return;
+    isDraggingKnife = true;
+    knife.classList.add('active-drag');
+    updateKnifeAndCut(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (isDraggingKnife && !cakeSliced) {
+      updateKnifeAndCut(e.clientX, e.clientY);
     }
   });
+
+  window.addEventListener('mouseup', () => {
+    isDraggingKnife = false;
+    if (knife) knife.classList.remove('active-drag');
+  });
+
+  // Touch drag events (Mobile phones)
+  cakeStage.addEventListener('touchstart', (e) => {
+    if (!candlesBlown || cakeSliced) return;
+    isDraggingKnife = true;
+    knife.classList.add('active-drag');
+    updateKnifeAndCut(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (isDraggingKnife && !cakeSliced && e.touches.length > 0) {
+      updateKnifeAndCut(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    isDraggingKnife = false;
+    if (knife) knife.classList.remove('active-drag');
+  });
+
+  // Click fallback: clicking lower half of cake also completes slice
+  cakeWrap.addEventListener('click', (e) => {
+    if (candlesBlown && !cakeSliced) {
+      updateKnifeAndCut(e.clientX, e.clientY);
+      // If clicked near center/bottom, finish cut
+      completeCakeSlice();
+    }
+  });
+}
+
+function spawnKnifeSparks(x, y) {
+  const el = document.createElement('div');
+  el.style.position = 'fixed';
+  el.style.zIndex = '9999';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.width = '5px';
+  el.style.height = '5px';
+  el.style.borderRadius = '50%';
+  el.style.backgroundColor = Math.random() > 0.5 ? '#f1c40f' : '#ffffff';
+  el.style.boxShadow = '0 0 8px #f1c40f';
+  el.style.pointerEvents = 'none';
+
+  const destX = (Math.random() - 0.5) * 40;
+  const destY = -15 - Math.random() * 25;
+  el.style.transition = 'all 0.6s ease-out';
+
+  document.body.appendChild(el);
+
+  requestAnimationFrame(() => {
+    el.style.transform = `translate(${destX}px, ${destY}px) scale(0.2)`;
+    el.style.opacity = '0';
+  });
+
+  setTimeout(() => el.remove(), 600);
 }
 
 /* ═══════════════════════════════════════════
@@ -343,21 +495,18 @@ function initQuizModal() {
   const letterModal = document.getElementById('letter-modal');
   const letterCloseBtn = document.getElementById('letter-close-btn');
 
-  // Open Quiz
   if (openBtn) {
     openBtn.addEventListener('click', () => {
       if (quizModal) quizModal.classList.add('active');
     });
   }
 
-  // Cancel Quiz
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
       if (quizModal) quizModal.classList.remove('active');
     });
   }
 
-  // Submit Quiz
   if (submitBtn) {
     submitBtn.addEventListener('click', () => {
       let allCorrect = true;
@@ -377,8 +526,6 @@ function initQuizModal() {
       if (allCorrect) {
         if (errorMsg) errorMsg.textContent = '';
         if (quizModal) quizModal.classList.remove('active');
-
-        // Reveal letter
         revealSecretLetter();
       } else {
         if (errorMsg) {
@@ -388,7 +535,6 @@ function initQuizModal() {
     });
   }
 
-  // Close Letter
   if (letterCloseBtn) {
     letterCloseBtn.addEventListener('click', () => {
       if (letterModal) letterModal.classList.remove('active');
@@ -456,7 +602,7 @@ function spawnClickLoveIcon(x, y) {
 
 function initGlobalClickLove() {
   window.addEventListener('click', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || isDraggingKnife) return;
     spawnClickLoveIcon(e.clientX, e.clientY);
   });
 }
@@ -589,7 +735,7 @@ function initParticles() {
 document.addEventListener('DOMContentLoaded', () => {
   loadCakeData();
   initMicPermission();
-  initCakeCutting();
+  initInteractiveCakeCutting();
   initQuizModal();
   initGlobalClickLove();
   initParticles();

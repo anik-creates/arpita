@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   CAKE PAGE STYLES  —  INTERACTIVE HEART CAKE & SECRET LETTER
+   CAKE PAGE STYLES  —  INTERACTIVE HEART CAKE & CALLIGRAPHY
    ═══════════════════════════════════════════════════════════ */
 
 /* Header */
@@ -68,7 +68,7 @@
 .instruction-box {
   text-align: center;
   max-width: 620px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   animation: fade-slide-right 0.8s var(--ease) both;
 }
 
@@ -191,10 +191,12 @@
   position: relative;
   width: 100%;
   max-width: 580px;
-  margin: 1.5rem auto 0;
+  margin: 1rem auto 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .heart-cake-wrap {
@@ -205,6 +207,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  touch-action: none;
 }
 
 .cake-glow-backdrop {
@@ -224,16 +227,60 @@
   height: 100%;
   overflow: visible;
   filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.8));
-  transition: transform 0.6s var(--ease);
 }
 
-.heart-cake-wrap:hover .heart-cake-svg {
-  transform: scale(1.02);
+/* Calligraphy Text Styling (Realistic Gold Piping) */
+.cake-calligraphy-group {
+  pointer-events: none;
 }
 
-/* Cake cut line */
-#cake-cut-line.sliced {
-  opacity: 1 !important;
+.calligraphy-script {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(243, 156, 18, 0.4);
+}
+
+.happy-birthday-text {
+  font-family: 'Great Vibes', cursive;
+  font-size: 42px;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.mona-text {
+  font-family: 'Alex Brush', cursive;
+  font-size: 60px;
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+
+/* Split Cake Halves on Cut */
+.cake-split-half {
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: 250px 225px;
+}
+
+.cake-split-half.left-half.cut-done {
+  transform: translateX(-12px) rotate(-1.5deg);
+}
+
+.cake-split-half.right-half.cut-done {
+  transform: translateX(12px) rotate(1.5deg);
+}
+
+/* Live Cut Line */
+#cake-cut-line {
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px #ffffff);
+}
+
+#cake-cut-line.cutting-active {
+  opacity: 1;
+}
+
+#cake-cut-line.cut-complete {
+  opacity: 1;
+  stroke: #f1c40f;
+  filter: drop-shadow(0 0 10px #f1c40f);
   animation: cut-glow 1.5s infinite alternate;
 }
 
@@ -396,41 +443,46 @@
 }
 
 /* ═══════════════════════════════════════════
-   CHEF'S KNIFE (SLICING INTERACTION)
+   CHEF'S KNIFE (DYNAMIC DRAG-TO-CUT)
    ═══════════════════════════════════════════ */
-.cake-knife {
+.cake-knife-cursor {
   position: absolute;
-  top: 10%;
-  right: 15%;
+  top: 5%;
+  left: 50%;
   z-index: 15;
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: pointer;
+  cursor: grab;
   opacity: 0;
-  transform: translateY(-40px) rotate(25deg);
+  transform: translate(-50%, 0) rotate(15deg);
   pointer-events: none;
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  transition: opacity 0.6s var(--ease), transform 0.1s ease-out;
 }
 
-.cake-knife.visible {
+.cake-knife-cursor.active-drag {
+  cursor: grabbing;
+  transition: none !important;
+}
+
+.cake-knife-cursor.visible {
   opacity: 1;
   pointer-events: auto;
-  animation: knife-bob 2.4s ease-in-out infinite;
+  animation: knife-float-prompt 2.2s ease-in-out infinite;
 }
 
 .knife-blade {
-  width: 14px;
-  height: 95px;
+  width: 15px;
+  height: 100px;
   background: linear-gradient(135deg, #ffffff 0%, #bdc3c7 40%, #7f8c8d 100%);
-  clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  clip-path: polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.85);
 }
 
 .knife-handle {
   width: 18px;
-  height: 45px;
+  height: 48px;
   background: linear-gradient(to right, #800e13, #ad2831, #38040e);
   border-radius: 4px;
   border: 1px solid #f39c12;
@@ -450,23 +502,20 @@
   background: #f1c40f;
 }
 
-.knife-hint {
+.knife-floating-hint {
   margin-top: 8px;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
   color: #f1c40f;
-  background: rgba(18, 12, 16, 0.85);
+  background: rgba(18, 12, 16, 0.9);
   border: 1px solid rgba(243, 156, 18, 0.4);
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: var(--radius-pill);
   backdrop-filter: blur(6px);
   white-space: nowrap;
-}
-
-/* Slicing cutting animation */
-.cake-knife.cutting {
-  animation: slice-down 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════
@@ -507,30 +556,6 @@
 .secret-trigger-btn:hover {
   transform: translateY(-3px) scale(1.03);
   box-shadow: 0 0 55px var(--accent-glow), 0 14px 35px rgba(0, 0, 0, 0.6);
-}
-
-/* Discreet Corner Bypass Button */
-.secret-corner-blow-btn {
-  position: fixed;
-  bottom: 16px;
-  left: 16px;
-  z-index: 100;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0.18;
-  transition: opacity 0.3s;
-}
-
-.secret-corner-blow-btn:hover {
-  opacity: 0.6;
 }
 
 /* ═══════════════════════════════════════════
@@ -840,21 +865,14 @@
   to { transform: scale(1.2); filter: drop-shadow(0 0 10px var(--accent-red)); }
 }
 
-@keyframes knife-bob {
-  0%, 100% { transform: translateY(-40px) rotate(25deg); }
-  50% { transform: translateY(-28px) rotate(22deg); }
-}
-
-@keyframes slice-down {
-  0% { transform: translateY(-40px) rotate(25deg); }
-  40% { transform: translate(-120px, 140px) rotate(45deg); }
-  70% { transform: translate(-120px, 190px) rotate(45deg); }
-  100% { transform: translate(-120px, 260px) rotate(50deg); opacity: 0; }
+@keyframes knife-float-prompt {
+  0%, 100% { transform: translate(-50%, 0) rotate(15deg); }
+  50% { transform: translate(-50%, -12px) rotate(10deg); }
 }
 
 @keyframes cut-glow {
-  0% { stroke: #ffffff; stroke-width: 3; }
-  100% { stroke: #f1c40f; stroke-width: 5; filter: drop-shadow(0 0 8px #f1c40f); }
+  0% { stroke: #ffffff; stroke-width: 4; }
+  100% { stroke: #f1c40f; stroke-width: 5; filter: drop-shadow(0 0 10px #f1c40f); }
 }
 
 @keyframes shake-item {
@@ -879,13 +897,21 @@
     max-width: 360px;
   }
 
+  .happy-birthday-text {
+    font-size: 32px;
+  }
+
+  .mona-text {
+    font-size: 46px;
+  }
+
   .knife-blade {
-    height: 70px;
+    height: 75px;
     width: 12px;
   }
 
   .knife-handle {
-    height: 35px;
+    height: 38px;
     width: 15px;
   }
 
